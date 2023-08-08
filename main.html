@@ -1,0 +1,937 @@
+{% set newdata = module.data_query.data.CRM.p_sff_sponsors_and_exhibitors_collection %}
+{% if dynamic_page_crm_object_type_fqn %}  
+<div class="exhibitors-wrap"> 
+    {# set query = "record_type__in=Sponsor" #}
+    {% set sortType =  crm_property_definition("sff_sponsors_and_exhibitors", "sort_type") %}
+    {% set countries =  crm_property_definition("sff_sponsors_and_exhibitors", "country") %}
+    {% set productService =  crm_property_definition("sff_sponsors_and_exhibitors", "product_and_service") %}
+    {% set zones =  crm_property_definition("sff_sponsors_and_exhibitors", "zone") %} 
+
+    {% set batch = 16 %}
+    
+    {% if not request.query_dict.page %}
+    {% set page_num = 1 %}
+    {% set offset = 0 %}
+    {% elif request.query_dict.page %}
+    {% set page_num = request.query_dict.page %}
+    {% set offset = page_num|add(-1) * batch %}
+    {% endif %}
+
+    {% set query = "&limit=" ~ batch ~ "&offset=" ~ offset %}
+
+    {% if request.query_dict.search %}
+    {% set searchNav = "&search=" ~ request.query_dict.search %}
+    {% set offsetNav = "&offset=" ~ offset|add(1)%}
+    {% set limitNav = "&limit=" ~ batch %}
+    {% endif %}
+
+    {% if request.query_dict.country %}
+    {% set country = "&country=" ~ request.query_dict.country %}
+    {% endif %}
+
+    {% if request.query_dict.product_and_service %}
+    {% set product_and_service = "&product_and_service__in=" ~ request.query_dict.product_and_service %}
+    {% set productNav = "&product_and_service=" ~ request.query_dict.product_and_service %}
+    {% endif %}
+
+    {% if request.query_dict.zone %}
+    {% set zone = "&zone=" ~ request.query_dict.zone %}
+    {% set zoneNav = "&zone=" ~ request.query_dict.zone %}
+    {% endif %}
+    
+    {% if request.query_dict.sort_type %}
+    {% set sort_type = "&sort_type__in=" ~ request.query_dict.sort_type %}
+    {% set sortNav = "&sort_type=" ~ request.query_dict.sort_type %}
+    {% endif %}
+    
+    
+    
+    {% set orderBy =  "&orderBy=-sff_sponsor_and_exhibitor_name" %}
+
+    {% set queryparm =  orderBy ~ country ~ product_and_service ~ zone ~  sort_type ~ query %}
+    {% set queryNav = searchNav ~ country ~ productNav ~ zoneNav ~ sortNav %}
+
+
+    {% set queryEex = "record_type__in=Exhibitor" ~ queryparm %}
+    {% set objects = crm_objects("sff_sponsors_and_exhibitors",  queryEex, "hs_object_id,sff_sponsor_and_exhibitor_name,logo_image_url,booth,zone,sort_type") %} 
+{#     {{ objects.total }}<br> #}
+    {% set total_pages = objects.total|divide(batch)|round(0)  %}
+{#     {{ total_pages }}<br> #}
+{#     {{ "re " ~ objects.total % batch }}<br> #}
+    {% if objects.total % batch > 0 and objects.total % batch < 5%}
+        {% set total_pages = total_pages + 1%}
+    {% endif %}
+
+{#     {{ total_pages }} #}
+    
+    {% set more_pages = total_pages - page_num %}
+    {% set exhibitors = objects.results %} 
+    {% set has_more = objects.has_more %}
+
+    <div class="container">
+        <div class="row">
+            <div class="top-sec"> 
+                <div class="alpha-area">
+                    <a class="active all-sort" href="">All</a>
+                    {% for sort in sortType.options %}
+                    <a class="sortFilter" value="{{ sort.value }}" data-index="{{ loop.index }}" href="{{ sort.value }}">{{ sort.label }}</a> 
+                    {% endfor  %}
+                </div>
+            </div>
+            <div class="mid-sec">
+                <form action="">
+                    <input id="select-search" type="text" name="search" placeholder="Search">
+                    <select id="select-state" placeholder="Country">
+                        <option value="">Country</option>
+                        {% for country in countries.options %}
+                        <option data-index="{{ loop.index }}" value="{{ country.value }}">{{ country.label }}</option>
+                        {% endfor  %}
+                    </select>
+                    <select id="select-product" placeholder="Product and Service">
+                        <option value="">Product and Service</option>
+                        {% for product in productService.options %}
+                        <option data-index="{{ loop.index }}" value="{{ product.value }}">{{ product.label }}</option>
+                        {% endfor  %}
+                    </select>
+                    <select id="select-zone" placeholder="Zone">
+                        <option value="">Zone</option>
+                        {% for zone in zones.options %}
+                        <option data-index="{{ loop.index }}" value="{{ zone.value }}">{{ zone.label }}</option>
+                        {% endfor  %}
+                    </select>
+                    <button type="submit" id="rs-btn">RESET</button>
+                </form>
+            </div>
+
+            <div class="bottom-sec">
+                <div class="bot-wp list-items">
+                    {% for exhibitor in exhibitors %}
+                    <div class="item">
+                        <div class="item-in">
+                            <a href="{{ content.absolute_url }}/{{ exhibitor.hs_object_id }}">
+                                <div class="img">
+                                    <span class="bg-img" style="background-image: url({{ exhibitor.logo_image_url }})"></span>   
+                                </div>
+                                <div class="txt-wp">
+                                    {% if exhibitor.pavilion %}
+                                    <span class="tag">{{ exhibitor.pavilion }} Pavilion</span>
+                                    {% endif %}
+                                    <h3>{{ exhibitor.sff_sponsor_and_exhibitor_name }}</h3>
+                                    <span class="booth">{{ exhibitor.booth }}</span> 
+                                    <div class="zone" title="{{ exhibitor.zone }}">
+                                        <span class="bg-zone" style="background-image: url({{ zoneIcon }})"></span>   
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div> 
+                    {% endfor %}
+                </div>
+                <div class="loading" style="display: none;">
+                    <div class="loader"> 
+                        <div class="loading-bars">
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pagination">
+                <div class="pagination-wp pagn">
+
+                    <div class="prev-w flex-row align-center">
+                        <a class="prev previous-posts-link {% if total_pages > page_num %}disable{% endif %}" href="{{ content.absolute_url }}?page={{ page_num|add(-1) }}{{queryNav}}" title="Next">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="24" viewBox="0 0 25 24" fill="none">
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M8.53972 11.9377C8.32004 11.7181 8.32004 11.362 8.53972 11.1423L14.2746 5.40743C14.4943 5.18776 14.8504 5.18776 15.07 5.40743L15.3352 5.6726C15.5549 5.89226 15.5549 6.24842 15.3352 6.46809L10.2633 11.54L15.3352 16.612C15.5549 16.8316 15.5549 17.1877 15.3352 17.4074L15.07 17.6726C14.8504 17.8923 14.4943 17.8923 14.2746 17.6726L8.53972 11.9377Z" fill="white"/>
+                            </svg><span>Prev</span>
+                        </a>
+                    </div>
+                    <div class="pagn-num">
+                        {% if more_pages == 0 %}
+                        {% if page_num|add(-4) >= 1 -%} <a class="num" href="{{ content.absolute_url }}?page={{ page_num|add(-4) }}{{queryNav}}">{{ page_num|add(-4) }}</a>{%- endif %}
+                        {% endif %}
+
+                        {% if more_pages <= 1 %}
+                        {% if page_num|add(-3) >= 1 %}<a class="num" href="{{ content.absolute_url }}?page={{ page_num|add(-3) }}{{queryNav}}">{{ page_num|add(-3) }}</a>{% endif %}
+                        {% endif %}
+
+                        {% if page_num|add(-2) >= 1 %} <a class="num" href="{{ content.absolute_url }}?page={{ page_num|add(-2) }}{{queryNav}}">{{ page_num|add(-2) }}</a>{% endif %}
+
+                        {% if page_num|add(-1) >= 1 %}<a class="num" href="{{ content.absolute_url }}?page={{ page_num|add(-1) }}{{queryNav}}">{{ page_num|add(-1) }}</a>{% endif %}
+
+                        <a class="active" href="{{ content.absolute_url }}?page={{ page_num }}{{queryNav}}">{{ page_num }}</a>
+
+                        {% if page_num|add(1) <= total_pages %}<a class="num" href="{{ content.absolute_url }}?page={{ page_num|add(1) }}{{queryNav}}">{{ page_num|add(1) }}</a>{% endif %}
+
+                        {% if page_num|add(2) <= total_pages %}<a class="num" href="{{ content.absolute_url }}?page={{ page_num|add(2) }}{{queryNav}}">{{ page_num|add(2) }}</a>{% endif %}
+
+                        {% if page_num <= 2 %}
+                        {% if page_num|add(3) <= total_pages %}<a class="num" href="{{ content.absolute_url }}?page={{ page_num|add(3) }}{{queryNav}}">{{ page_num|add(3) }}</a>{% endif %}
+                        {% endif %}
+
+                        {% if page_num == 1 %}
+                        {% if page_num|add(4) <= total_pages %}<a class="num" href="{{ content.absolute_url }}?page={{ page_num|add(4) }}{{queryNav}}">{{ page_num|add(4) }}</a>{% endif %}
+                        {% endif %}
+                    </div>
+
+                    <div class="next-w flex-row align-center">
+                        <a class="next-posts-link next  {% if page_num > 1 %}disable{% endif %}" href="{{ content.absolute_url }}?page={{ page_num|add(1) }}{{queryNav}}" title="Older Posts">
+                            <span>Next</span><svg xmlns="http://www.w3.org/2000/svg" width="25" height="24" viewBox="0 0 25 24" fill="none">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M15.4603 11.1423C15.68 11.362 15.68 11.7181 15.4603 11.9377L9.72541 17.6726C9.50573 17.8923 9.14963 17.8923 8.92996 17.6726L8.66476 17.4074C8.44508 17.1878 8.44508 16.8316 8.66476 16.6119L13.7367 11.54L8.66476 6.46806C8.44508 6.24838 8.44508 5.89228 8.66476 5.67261L8.92996 5.40741C9.14963 5.18773 9.50573 5.18773 9.72541 5.40741L15.4603 11.1423Z" fill="#141414"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div> 
+            </div>
+        </div>
+    </div>
+</div>
+
+{% require_css %}
+<style>
+    {% scope_css %}
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap');
+    .exhibitors-wrap .page-center {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    .exhibitors-wrap .row {
+        margin: 0 -10px;
+    }
+    .exhibitors-wrap .top-sec {
+        margin-bottom: 29px;
+        padding: 0 10px;
+    }
+    .exhibitors-wrap .alpha-area {
+        display: flex;
+        border-radius: 10px;
+        background: #1E1D1D;
+        backdrop-filter: blur(68.5px);
+        padding: 11px 18px;
+        justify-content: center;
+        align-items: center;
+        padding-top: 0;
+        padding-bottom: 0;
+        flex-wrap: wrap;
+    }
+    .exhibitors-wrap .alpha-area a {
+        color: #FFF;
+        font-family: Roboto;
+        font-size: 24px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: normal;
+        padding-left: 14px;
+        padding-right: 14px;
+        text-transform: uppercase;
+        padding: 11px 14px;
+        padding: 11px 13px;
+        position: relative;
+        text-decoration: none;
+    }
+    .exhibitors-wrap .alpha-area a:not(:last-child):after {
+        content: '';
+        position: absolute;
+        top: 11px;
+        right: 0;
+        width: 1px;
+        height: 28px;
+        display: block;
+        background: #3E3E3E;
+    }
+    .exhibitors-wrap .alpha-area a.active,
+    .exhibitors-wrap .alpha-area a:hover {
+        color: #FCB316;
+        text-decoration: none;
+    }
+
+    .exhibitors-wrap .alpha-area a:first-child {
+        padding-left: 0;
+    }
+    .exhibitors-wrap .alpha-area a:last-child {
+        padding-right: 0;
+    }
+    .exhibitors-wrap .mid-sec {
+        margin-bottom: 74px;
+        padding: 0 10px;
+    }
+    .exhibitors-wrap .bot-wp {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    .exhibitors-wrap form {
+        display: flex;
+        justify-content: space-between;
+    }
+    .exhibitors-wrap .item {
+        width: 25%;   
+        overflow: hidden;    
+        margin-bottom: 47px;
+        padding: 0 10px;
+    }
+    .exhibitors-wrap .item.first {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    .exhibitors-wrap .item{
+        cursor: pointer;
+    }
+    .exhibitors-wrap .img {
+        border-radius: 10px 10px 0 0;
+        overflow: hidden;
+        position: relative;
+        min-height: 150px;
+        background-color: #fff;
+    }
+    .exhibitors-wrap span.bg-img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-size: contain;
+    }
+    .exhibitors-wrap .img img {
+        max-width: 100%;
+        height: auto;
+        vertical-align: middle;
+    }
+    .exhibitors-wrap .img:after {
+        position: absolute;
+        content: '';
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        background: #3E3E3E;
+        opacity: 0;
+    }
+    .exhibitors-wrap .img:hover:after {
+        opacity: 0.5;
+    }
+    .exhibitors-wrap .item.tag .img:after {
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.60);
+    }
+    .exhibitors-wrap .txt-wp {
+        padding: 31px 17px 17px;
+        background: #1E1D1D;
+        border-radius: 0 0 10px 10px;
+        position: relative;
+    }
+    .exhibitors-wrap span.tag {
+        position: absolute;
+        top: -11px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #000;
+        font-family: Roboto;
+        font-size: 14px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: normal;
+        display: inline-flex;
+        padding: 6px 10px;
+        justify-content: center;
+        align-items: center;
+        border-radius: 5px;
+        background: #FCB316;
+    }
+    .exhibitors-wrap .txt-wp h3 {
+        color: #FFF;
+        font-family: Roboto;
+        font-size: 24px;
+        font-style: normal;
+        font-weight: 700;
+        line-height: normal;
+    }
+    .exhibitors-wrap .txt-wp .booth {
+        color: #FFF;
+        font-family: Roboto;
+        font-size: 18px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: normal;
+    }
+    .exhibitors-wrap .zone {
+        text-align: right;
+        margin-top: 7px;
+        margin-left: auto;
+    }
+    .exhibitors-wrap .zone img {
+        width: 52px;
+        height: auto;
+        vertical-align: middle;
+    }
+    .exhibitors-wrap .zone  {
+        width: 52px;
+        height: auto;
+        vertical-align: middle;
+        overflow: hidden;
+        position: relative;
+        height: 52px;
+    }
+    .exhibitors-wrap .zone .bg-zone  {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-size: contain;
+    }
+    .exhibitors-wrap #select-search {
+        display: inline-block;
+        padding: 13px 15px;
+        padding-right: 40px;
+        color: #FFF;
+        font-family: Roboto;
+        font-size: 18px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: normal;
+        border: none;
+        border-radius: 10px;
+        background: #1E1D1D;
+        outline: none;
+        width: 266px;
+        max-width: 100%;
+        margin-right: 30px;
+        background-image: url(https://24345494.fs1.hubspotusercontent-na1.net/hubfs/24345494/SFF%20-%20Sponsor%20and%20Exhibitor%20Image/Seach%20Icon.png);
+        background-repeat: no-repeat;
+        background-size: 24px 24px;
+        background-position: 96% center;
+    }
+    .exhibitors-wrap #select-state,
+    .exhibitors-wrap #select-product, 
+    .exhibitors-wrap #select-zone {
+        display: inline-block;
+        padding: 13px 15px;
+        color: #FFF;
+        font-family: Roboto;
+        font-size: 18px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: normal;
+        border: none;
+        border-radius: 10px;
+        background: #1E1D1D;
+        outline: none;
+        width: 218px;
+        max-width: 100%;
+        margin-right: 30px;
+        -webkit-appearance: none; 
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url(https://24345494.fs1.hubspotusercontent-na1.net/hubfs/24345494/SFF%20-%20Sponsor%20and%20Exhibitor%20Image/arrow-down.png);
+        background-repeat: no-repeat;
+        background-size: 24px 24px;
+        background-position: 96% center;
+        padding-right: 40px;
+    }
+    .exhibitors-wrap #select-product {
+        width: 282px;
+    }
+    .exhibitors-wrap #select-zone {
+        width: 213px;
+    }
+    .exhibitors-wrap ::-webkit-input-placeholder {
+        color: #FFF;
+    }
+    .exhibitors-wrap :-moz-placeholder {
+        color: #FFF;
+        opacity:  1;
+    }
+    .exhibitors-wrap ::-moz-placeholder {
+        color: #FFF;
+        opacity:  1;
+    }
+    .exhibitors-wrap :-ms-input-placeholder {
+        color: #FFF;
+    }
+    .exhibitors-wrap::-ms-input-placeholder {
+        color: #FFF;
+    }
+    .exhibitors-wrap ::placeholder {
+        color: #FFF;
+    }
+    .exhibitors-wrap #rs-btn {
+        display: inline-block;
+        padding: 13px 25px;
+        border-radius: 5px;
+        background: #F7B31B;
+        color: #141414;
+        font-family: Open Sans;
+        font-size: 16px;
+        font-style: normal;
+        font-weight: 700;
+        line-height: 1.5;
+        border: none;
+        outline: none;
+        cursor: pointer;
+    }
+    .exhibitors-wrap .pagination-wp {
+        margin-top: 32px;
+        padding: 0 10px;
+        padding-bottom: 73px;
+    }
+    .exhibitors-wrap .pagn {
+        display: flex;
+        justify-content: space-between;
+    }
+    .exhibitors-wrap .pagn-num a {
+        display: inline-block;
+        padding: 12px;
+        border-radius: 8px;
+        width: 40px;
+        height: 40px;
+        text-align: center;
+    }
+    .exhibitors-wrap a.prev svg,
+    .exhibitors-wrap a.next svg {
+        width: 24px;
+        height: 24px;
+    }
+    .exhibitors-wrap a.prev,
+    .exhibitors-wrap a.next {
+        padding: 12px 20px;
+        display: inline-flex;
+        align-items: center;
+    }
+    .exhibitors-wrap a.prev svg {
+        margin-right: 12px;
+    }
+    .exhibitors-wrap a.next svg {
+        margin-left: 12px;
+    }
+    .exhibitors-wrap .pagn a {
+        color: #fff;
+        font-family: Roboto;
+        font-size: 16px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 1;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    .exhibitors-wrap .pagn a.active {
+        border-radius: 5px;
+        color: #000;
+        background: #FCB316;
+    }
+    .exhibitors-wrap .pagn a:hover {
+        border-radius: 5px;
+        color: #000;
+        background: #FCB316;
+    }
+    .exhibitors-wrap a.prev svg path,
+    .exhibitors-wrap a.next svg path {
+        fill: #fff;
+    }
+    .exhibitors-wrap a.prev:hover svg path,
+    .exhibitors-wrap a.next:hover svg path {
+        fill: #000;
+    }
+    .pagination a.disable {
+        opacity: .5;
+        pointer-events: none;
+    }
+    @media (max-width: 1210px) and (min-width: 992px) {
+        .exhibitors-wrap #select-search,
+        .exhibitors-wrap #select-state, 
+        .exhibitors-wrap #select-product, 
+        .exhibitors-wrap #select-zone {
+            width: 25%;
+            margin-right: 15px;
+        }
+    }
+    @media (max-width: 991px) {
+        .exhibitors-wrap .alpha-area a {
+            font-size: 15px;
+            padding: 8px 10px;
+        }
+        .exhibitors-wrap .alpha-area a:not(:last-child):after {
+            top: 8px;
+            height: 22px;
+        }
+        .exhibitors-wrap .item {
+            width: 50%;
+            margin-bottom: 25px;
+        }
+        .exhibitors-wrap .txt-wp h3 {
+            font-size: 20px;
+        }
+        .exhibitors-wrap form {
+            display: block;
+        }
+        .exhibitors-wrap #select-search,
+        .exhibitors-wrap #select-product,
+        .exhibitors-wrap #select-state,
+        .exhibitors-wrap #select-zone  {
+            width: 100%;
+            margin-right: 0;
+            margin-bottom: 20px;
+            font-size: 15px;
+            background-size: 20px 20px;
+        }
+        .exhibitors-wrap #select-search {
+            background-image: url(https://24345494.fs1.hubspotusercontent-na1.net/hubfs/24345494/SFF%20-%20Sponsor%20and%20Exhibitor%20Image/Seach%20Icon.png);
+            background-size: 20px 20px;
+        }
+        .exhibitors-wrap #rs-btn {
+            display: block;
+            width: 100%;
+            font-size: 15px;
+            padding: 10px 20px;
+        }
+        .exhibitors-wrap .pagn-num a {
+            width: 30px;
+            height: 30px;
+        }
+        .exhibitors-wrap a.prev, 
+        .exhibitors-wrap a.next {
+            padding: 12px 12px;
+        }
+        .exhibitors-wrap a.prev svg, 
+        .exhibitors-wrap a.next svg {
+            width: 14px;
+            height: 14px;
+        }
+        .exhibitors-wrap span.tag {
+            font-size: 13px;
+            padding: 6px 7px;
+        }
+        .exhibitors-wrap .mid-sec {
+            margin-bottom: 40px;
+        }
+        .exhibitors-wrap .pagn a,
+        .exhibitors-wrap a.prev,
+        .exhibitors-wrap a.next {
+            padding: 8px 8px;
+            font-size: 14px;
+            line-height: 1;
+        }
+    }
+    @media (max-width: 767px) {
+        .exhibitors-wrap .item {
+            width: 50%;
+            margin-bottom: 25px;
+        }
+        .exhibitors-wrap form {
+            display: block;
+        }
+        .exhibitors-wrap #select-search,
+        .exhibitors-wrap #select-product,
+        .exhibitors-wrap #select-state,
+        .exhibitors-wrap form #select-zone  {
+            width: 100%;
+            margin-right: 0;
+            margin-bottom: 20px;
+        }
+        .exhibitors-wrap #rs-btn {
+            display: block;
+            width: 100%;
+        }
+        .exhibitors-wrap a.prev, 
+        .exhibitors-wrap a.next {
+            padding: 12px 12px;
+        }
+        .exhibitors-wrap a.prev svg, 
+        .exhibitors-wrap a.next svg {
+            width: 14px;
+            height: 14px;
+        }
+        .exhibitors-wrap span.tag {
+            font-size: 13px;
+            padding: 6px 7px;
+        }
+        .exhibitors-wrap .pagn a,
+        .exhibitors-wrap a.prev,
+        .exhibitors-wrap a.next {
+            padding: 8px 8px;
+            font-size: 14px;
+            line-height: 1;
+        }
+    }
+    @media (max-width: 479px) {
+        .exhibitors-wrap .page-center {
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+        .exhibitors-wrap .item {
+            width: 100%;
+        }
+        .exhibitors-wrap .pagination-wp {
+            padding: 0;
+        }
+    }
+    {% end_scope_css %}
+</style>
+{% end_require_css %}
+{% require_js %}
+<script>
+    $(".exhibitors-wrap span.tag").each(function() {
+        var b = $(this).text();
+        var a = b.trim().split(" ").join("-").toLowerCase();
+        $(this).addClass(a)
+    });
+
+
+</script>
+{% end_require_js %}
+{% endif %}
+
+<script>
+    // debounce so filtering doesn't happen every millisecond
+    function debounce( fn, threshold ) {
+        var timeout;
+        threshold = threshold || 100;
+        return function debounced() {
+            clearTimeout( timeout );
+            var args = arguments;
+            var _this = this;
+            function delayed() {
+                fn.apply( _this, args );
+            }
+            timeout = setTimeout( delayed, threshold );
+        };
+    }
+    
+    let country = []
+    let product = [];
+    let zone = [];
+    let sortType = [];
+    let url;
+
+    {#
+    $('#select-search').on('input', debounce(function() {
+        $('.loading').css('display','block');
+        $('.list-items').hide();
+
+        url = `{{ content.absolute_url }}?search=${ encodeURIComponent(this.value) }`; 
+        console.log(url)
+        $('.list-items').load(url + " .item", function(response,status,xhr) {
+            if(status == "success") {
+                $('.loading').hide();
+                $('.list-items').fadeIn();
+            }
+        });  
+        $('.load-more-group').load(url + " .load-more", function(response,status,xhr) {}); 
+
+    }, 500 ));
+ #}
+    //============================== Country ==========================================
+
+    $('#select-state').on('change', function() {
+        $('#not-found').remove();
+        console.log("state")
+        $('.loading').css('display','block');
+        $('.list-items').hide();
+        $('.load-more-group').hide();
+        country = $('#select-state').map(function() {
+            return encodeURIComponent(this.value.trim()); 
+        }).get(); 
+
+        url = `{{ content.absolute_url }}?country=${ country.join(',') }&product_and_service=${product.join(',')}&zone=${zone.join(',')}&sort_type=${sortType.join(',')}`; 
+        console.log(url)
+        $('.list-items').load(url + " .item", function(response,status,xhr) {
+            if(status == "success") {
+                $('.loading').hide();
+                $('.list-items').fadeIn();
+            }
+            let parentEle = document.querySelector('.bot-wp.list-items')
+            if(!parentEle.hasChildNodes()){
+                $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
+            } else {
+                $('#not-found').remove();
+            }
+        });
+        $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {}); 
+        
+    
+    });
+
+    //============================== Product ==========================================
+
+    $('#select-product').on('change', function() {
+        console.log("product")
+        $('#not-found').remove();
+        $('.loading').css('display','block');
+        $('.list-items').hide();
+        product = $('#select-product').map(function() {
+            return encodeURIComponent(this.value.trim()); 
+        }).get();
+        url = `{{ content.absolute_url }}?country=${ country.join(',') }&product_and_service=${product.join(',')}&zone=${zone.join(',')}&sort_type=${sortType.join(',')}`; 
+        console.log(url)
+        $('.list-items').load(url + " .item", function(response,status,xhr) {
+            if(status == "success") {
+                $('.loading').hide();
+                $('.list-items').fadeIn();
+            }
+            let parentEle = document.querySelector('.bot-wp.list-items')
+            if(!parentEle.hasChildNodes()){
+                $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
+            } else {
+                $('#not-found').remove();
+            }
+        });
+        $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {}); 
+        if(!parentEle.hasChildNodes()){
+            $('.bot-wp.list-items').after('No Exhibitor found')
+        }
+    });
+
+
+    //============================== Zone ==========================================
+
+    $('#select-zone').on('change', function() {
+        $('#not-found').remove();
+        $('.loading').css('display','block');
+        $('.list-items').hide();
+        zone = $('#select-zone').map(function() {
+            return encodeURIComponent(this.value.trim()); 
+        }).get(); 
+        url = `{{ content.absolute_url }}?country=${ country.join(',') }&product_and_service=${product.join(',')}&zone=${zone.join(',')}&sort_type=${sortType.join(',')}`;
+        console.log(url)
+        $('.list-items').load(url + " .item", function(response,status,xhr) {
+            if(status == "success") {
+                $('.loading').hide();
+                $('.list-items').fadeIn();
+            }
+            let parentEle = document.querySelector('.bot-wp.list-items')
+            if(!parentEle.hasChildNodes()){
+                $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
+            } else {
+                $('#not-found').remove();
+            }
+            
+        });
+        $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {
+            console.log("zone ex")
+        }); 
+        if(!parentEle.hasChildNodes()){
+            $('.bot-wp.list-items').after('No Exhibitor found')
+        }
+    });
+    
+    //============================== Sort Type ==========================================
+
+    $('.sortFilter').each(function(){
+        $(this).click(function(e){
+            $('#not-found').remove();
+            e.preventDefault();
+            e.stopPropagation();
+            $('.loading').css('display','block');
+            $('.list-items').hide();
+            
+            $('.all-sort').removeClass('active')
+            $(this).addClass('active')
+           
+            if(!sortType.includes(e.target.textContent) ){
+                sortType.push(e.target.textContent)
+            } else {
+                $(this).removeClass('active')
+                sortType = sortType.filter( item => item != e.target.textContent )
+            }
+            
+            console.log("sort", sortType)
+            console.log("sort", sortType.join(','))
+            url = `{{ content.absolute_url }}?country=${ country.join(',') }&product_and_service=${product.join(',')}&zone=${zone.join(',')}&sort_type=${sortType.join(',')}`;
+            console.log(url)
+            $('.list-items').load(url + " .item", function(response,status,xhr) {
+                if(status == "success") {
+                    $('.loading').hide();
+                    $('.list-items').fadeIn();
+                }
+                let parentEle = document.querySelector('.bot-wp.list-items')
+                if(!parentEle.hasChildNodes()){
+                    $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
+                } else {
+                    $('#not-found').remove();
+                }
+            });
+            $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {
+                console.log("s type")
+            }); 
+           
+          
+        })
+
+    })
+    
+    //============================== Pagination Click ==========================================
+    $(".pagination").on( "click", "a", function(event) {
+        event.preventDefault()
+        event.stopPropagation();
+        url = $(this).attr('href')
+        $('#not-found').remove();
+        url = "http:"+ url
+        console.log(url)
+        $('.loading').css('display','block');
+        $('.list-items').hide();
+        $('.list-items').load(url + " .item", function(response,status,xhr) {
+            if(status == "success") {
+                $('.loading').hide();
+                $('.list-items').fadeIn();
+                let parentEle = document.querySelector('.bot-wp.list-items')
+                if(!parentEle.hasChildNodes()){
+                    $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
+                } else {
+                    $('#not-found').remove();
+                }
+            }
+        });
+        $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {
+            console.log("zone ex")
+        }); 
+       
+        $(this).siblings().removeClass('active')
+        $(this).addClass('active')
+        
+    })
+
+    $(".exhibitors-wrap .mid-sec > form").submit(function(e){
+        event.preventDefault()
+        event.stopPropagation();
+        
+        $('#not-found').remove();
+        console.log("state")
+        $('.loading').css('display','block');
+        $('.list-items').hide();
+        $('.load-more-group').hide();
+        country = $('#select-state').map(function() {
+            return encodeURIComponent(this.value.trim()); 
+        }).get(); 
+
+        url = `{{ content.absolute_url }}?country=&product_and_service=&zone=&sort_type=`; 
+        console.log(url)
+        $('.list-items').load(url + " .item", function(response,status,xhr) {
+            if(status == "success") {
+                $('.loading').hide();
+                $('.list-items').fadeIn();
+            }
+            let parentEle = document.querySelector('.bot-wp.list-items')
+            if(!parentEle.hasChildNodes()){
+                $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
+            } else {
+                $('#not-found').remove();
+            }
+        });
+        $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {}); 
+    });
+//     $('body').on('focus', '.quicksearch', function() {
+//         $('.filters input:checkbox:checked').click();
+//     });
+
+</script>
