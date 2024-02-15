@@ -191,7 +191,266 @@
     </div>
 </div>
 
-{% require_css %}
+
+{% require_js %}
+<script>
+    $(".exhibitors-wrap span.tag").each(function() {
+        var b = $(this).text();
+        var a = b.trim().split(" ").join("-").toLowerCase();
+        $(this).addClass(a)
+    });
+
+
+</script>
+{% end_require_js %}
+{% endif %}
+
+<script>
+    // debounce so filtering doesn't happen every millisecond
+    function debounce( fn, threshold ) {
+        var timeout;
+        threshold = threshold || 100;
+        return function debounced() {
+            clearTimeout( timeout );
+            var args = arguments;
+            var _this = this;
+            function delayed() {
+                fn.apply( _this, args );
+            }
+            timeout = setTimeout( delayed, threshold );
+        };
+    }
+    
+    let country = []
+    let product = [];
+    let zone = [];
+    let sortType = [];
+    let url;
+
+    {#
+    $('#select-search').on('input', debounce(function() {
+        $('.loading').css('display','block');
+        $('.list-items').hide();
+
+        url = `{{ content.absolute_url }}?search=${ encodeURIComponent(this.value) }`; 
+        console.log(url)
+        $('.list-items').load(url + " .item", function(response,status,xhr) {
+            if(status == "success") {
+                $('.loading').hide();
+                $('.list-items').fadeIn();
+            }
+        });  
+        $('.load-more-group').load(url + " .load-more", function(response,status,xhr) {}); 
+
+    }, 500 ));
+ #}
+    //============================== Country ==========================================
+
+    $('#select-state').on('change', function() {
+        $('#not-found').remove();
+        console.log("state")
+        $('.loading').css('display','block');
+        $('.list-items').hide();
+        $('.load-more-group').hide();
+        country = $('#select-state').map(function() {
+            return encodeURIComponent(this.value.trim()); 
+        }).get(); 
+
+        url = `{{ content.absolute_url }}?country=${ country.join(',') }&product_and_service=${product.join(',')}&zone=${zone.join(',')}&sort_type=${sortType.join(',')}`; 
+        console.log(url)
+        $('.list-items').load(url + " .item", function(response,status,xhr) {
+            if(status == "success") {
+                $('.loading').hide();
+                $('.list-items').fadeIn();
+            }
+            let parentEle = document.querySelector('.bot-wp.list-items')
+            if(!parentEle.hasChildNodes()){
+                $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
+            } else {
+                $('#not-found').remove();
+            }
+        });
+        $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {}); 
+        
+    
+    });
+
+    //============================== Product ==========================================
+
+    $('#select-product').on('change', function() {
+        console.log("product")
+        $('#not-found').remove();
+        $('.loading').css('display','block');
+        $('.list-items').hide();
+        product = $('#select-product').map(function() {
+            return encodeURIComponent(this.value.trim()); 
+        }).get();
+        url = `{{ content.absolute_url }}?country=${ country.join(',') }&product_and_service=${product.join(',')}&zone=${zone.join(',')}&sort_type=${sortType.join(',')}`; 
+        console.log(url)
+        $('.list-items').load(url + " .item", function(response,status,xhr) {
+            if(status == "success") {
+                $('.loading').hide();
+                $('.list-items').fadeIn();
+            }
+            let parentEle = document.querySelector('.bot-wp.list-items')
+            if(!parentEle.hasChildNodes()){
+                $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
+            } else {
+                $('#not-found').remove();
+            }
+        });
+        $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {}); 
+        if(!parentEle.hasChildNodes()){
+            $('.bot-wp.list-items').after('No Exhibitor found')
+        }
+    });
+
+
+    //============================== Zone ==========================================
+
+    $('#select-zone').on('change', function() {
+        $('#not-found').remove();
+        $('.loading').css('display','block');
+        $('.list-items').hide();
+        zone = $('#select-zone').map(function() {
+            return encodeURIComponent(this.value.trim()); 
+        }).get(); 
+        url = `{{ content.absolute_url }}?country=${ country.join(',') }&product_and_service=${product.join(',')}&zone=${zone.join(',')}&sort_type=${sortType.join(',')}`;
+        console.log(url)
+        $('.list-items').load(url + " .item", function(response,status,xhr) {
+            if(status == "success") {
+                $('.loading').hide();
+                $('.list-items').fadeIn();
+            }
+            let parentEle = document.querySelector('.bot-wp.list-items')
+            if(!parentEle.hasChildNodes()){
+                $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
+            } else {
+                $('#not-found').remove();
+            }
+            
+        });
+        $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {
+            console.log("zone ex")
+        }); 
+        if(!parentEle.hasChildNodes()){
+            $('.bot-wp.list-items').after('No Exhibitor found')
+        }
+    });
+    
+    //============================== Sort Type ==========================================
+
+    $('.sortFilter').each(function(){
+        $(this).click(function(e){
+            $('#not-found').remove();
+            e.preventDefault();
+            e.stopPropagation();
+            $('.loading').css('display','block');
+            $('.list-items').hide();
+            
+            $('.all-sort').removeClass('active')
+            $(this).addClass('active')
+           
+            if(!sortType.includes(e.target.textContent) ){
+                sortType.push(e.target.textContent)
+            } else {
+                $(this).removeClass('active')
+                sortType = sortType.filter( item => item != e.target.textContent )
+            }
+            
+            console.log("sort", sortType)
+            console.log("sort", sortType.join(','))
+            url = `{{ content.absolute_url }}?country=${ country.join(',') }&product_and_service=${product.join(',')}&zone=${zone.join(',')}&sort_type=${sortType.join(',')}`;
+            console.log(url)
+            $('.list-items').load(url + " .item", function(response,status,xhr) {
+                if(status == "success") {
+                    $('.loading').hide();
+                    $('.list-items').fadeIn();
+                }
+                let parentEle = document.querySelector('.bot-wp.list-items')
+                if(!parentEle.hasChildNodes()){
+                    $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
+                } else {
+                    $('#not-found').remove();
+                }
+            });
+            $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {
+                console.log("s type")
+            }); 
+           
+          
+        })
+
+    })
+    
+    //============================== Pagination Click ==========================================
+    $(".pagination").on( "click", "a", function(event) {
+        event.preventDefault()
+        event.stopPropagation();
+        url = $(this).attr('href')
+        $('#not-found').remove();
+        url = "http:"+ url
+        console.log(url)
+        $('.loading').css('display','block');
+        $('.list-items').hide();
+        $('.list-items').load(url + " .item", function(response,status,xhr) {
+            if(status == "success") {
+                $('.loading').hide();
+                $('.list-items').fadeIn();
+                let parentEle = document.querySelector('.bot-wp.list-items')
+                if(!parentEle.hasChildNodes()){
+                    $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
+                } else {
+                    $('#not-found').remove();
+                }
+            }
+        });
+        $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {
+            console.log("zone ex")
+        }); 
+       
+        $(this).siblings().removeClass('active')
+        $(this).addClass('active')
+        
+    })
+
+    $(".exhibitors-wrap .mid-sec > form").submit(function(e){
+        event.preventDefault()
+        event.stopPropagation();
+        
+        $('#not-found').remove();
+        console.log("state")
+        $('.loading').css('display','block');
+        $('.list-items').hide();
+        $('.load-more-group').hide();
+        country = $('#select-state').map(function() {
+            return encodeURIComponent(this.value.trim()); 
+        }).get(); 
+
+        url = `{{ content.absolute_url }}?country=&product_and_service=&zone=&sort_type=`; 
+        console.log(url)
+        $('.list-items').load(url + " .item", function(response,status,xhr) {
+            if(status == "success") {
+                $('.loading').hide();
+                $('.list-items').fadeIn();
+            }
+            let parentEle = document.querySelector('.bot-wp.list-items')
+            if(!parentEle.hasChildNodes()){
+                $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
+            } else {
+                $('#not-found').remove();
+            }
+        });
+        $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {}); 
+    });
+//     $('body').on('focus', '.quicksearch', function() {
+//         $('.filters input:checkbox:checked').click();
+//     });
+
+</script>
+
+
+                            {% require_css %}
 <style>
     {% scope_css %}
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap');
@@ -679,259 +938,3 @@
     {% end_scope_css %}
 </style>
 {% end_require_css %}
-{% require_js %}
-<script>
-    $(".exhibitors-wrap span.tag").each(function() {
-        var b = $(this).text();
-        var a = b.trim().split(" ").join("-").toLowerCase();
-        $(this).addClass(a)
-    });
-
-
-</script>
-{% end_require_js %}
-{% endif %}
-
-<script>
-    // debounce so filtering doesn't happen every millisecond
-    function debounce( fn, threshold ) {
-        var timeout;
-        threshold = threshold || 100;
-        return function debounced() {
-            clearTimeout( timeout );
-            var args = arguments;
-            var _this = this;
-            function delayed() {
-                fn.apply( _this, args );
-            }
-            timeout = setTimeout( delayed, threshold );
-        };
-    }
-    
-    let country = []
-    let product = [];
-    let zone = [];
-    let sortType = [];
-    let url;
-
-    {#
-    $('#select-search').on('input', debounce(function() {
-        $('.loading').css('display','block');
-        $('.list-items').hide();
-
-        url = `{{ content.absolute_url }}?search=${ encodeURIComponent(this.value) }`; 
-        console.log(url)
-        $('.list-items').load(url + " .item", function(response,status,xhr) {
-            if(status == "success") {
-                $('.loading').hide();
-                $('.list-items').fadeIn();
-            }
-        });  
-        $('.load-more-group').load(url + " .load-more", function(response,status,xhr) {}); 
-
-    }, 500 ));
- #}
-    //============================== Country ==========================================
-
-    $('#select-state').on('change', function() {
-        $('#not-found').remove();
-        console.log("state")
-        $('.loading').css('display','block');
-        $('.list-items').hide();
-        $('.load-more-group').hide();
-        country = $('#select-state').map(function() {
-            return encodeURIComponent(this.value.trim()); 
-        }).get(); 
-
-        url = `{{ content.absolute_url }}?country=${ country.join(',') }&product_and_service=${product.join(',')}&zone=${zone.join(',')}&sort_type=${sortType.join(',')}`; 
-        console.log(url)
-        $('.list-items').load(url + " .item", function(response,status,xhr) {
-            if(status == "success") {
-                $('.loading').hide();
-                $('.list-items').fadeIn();
-            }
-            let parentEle = document.querySelector('.bot-wp.list-items')
-            if(!parentEle.hasChildNodes()){
-                $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
-            } else {
-                $('#not-found').remove();
-            }
-        });
-        $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {}); 
-        
-    
-    });
-
-    //============================== Product ==========================================
-
-    $('#select-product').on('change', function() {
-        console.log("product")
-        $('#not-found').remove();
-        $('.loading').css('display','block');
-        $('.list-items').hide();
-        product = $('#select-product').map(function() {
-            return encodeURIComponent(this.value.trim()); 
-        }).get();
-        url = `{{ content.absolute_url }}?country=${ country.join(',') }&product_and_service=${product.join(',')}&zone=${zone.join(',')}&sort_type=${sortType.join(',')}`; 
-        console.log(url)
-        $('.list-items').load(url + " .item", function(response,status,xhr) {
-            if(status == "success") {
-                $('.loading').hide();
-                $('.list-items').fadeIn();
-            }
-            let parentEle = document.querySelector('.bot-wp.list-items')
-            if(!parentEle.hasChildNodes()){
-                $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
-            } else {
-                $('#not-found').remove();
-            }
-        });
-        $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {}); 
-        if(!parentEle.hasChildNodes()){
-            $('.bot-wp.list-items').after('No Exhibitor found')
-        }
-    });
-
-
-    //============================== Zone ==========================================
-
-    $('#select-zone').on('change', function() {
-        $('#not-found').remove();
-        $('.loading').css('display','block');
-        $('.list-items').hide();
-        zone = $('#select-zone').map(function() {
-            return encodeURIComponent(this.value.trim()); 
-        }).get(); 
-        url = `{{ content.absolute_url }}?country=${ country.join(',') }&product_and_service=${product.join(',')}&zone=${zone.join(',')}&sort_type=${sortType.join(',')}`;
-        console.log(url)
-        $('.list-items').load(url + " .item", function(response,status,xhr) {
-            if(status == "success") {
-                $('.loading').hide();
-                $('.list-items').fadeIn();
-            }
-            let parentEle = document.querySelector('.bot-wp.list-items')
-            if(!parentEle.hasChildNodes()){
-                $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
-            } else {
-                $('#not-found').remove();
-            }
-            
-        });
-        $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {
-            console.log("zone ex")
-        }); 
-        if(!parentEle.hasChildNodes()){
-            $('.bot-wp.list-items').after('No Exhibitor found')
-        }
-    });
-    
-    //============================== Sort Type ==========================================
-
-    $('.sortFilter').each(function(){
-        $(this).click(function(e){
-            $('#not-found').remove();
-            e.preventDefault();
-            e.stopPropagation();
-            $('.loading').css('display','block');
-            $('.list-items').hide();
-            
-            $('.all-sort').removeClass('active')
-            $(this).addClass('active')
-           
-            if(!sortType.includes(e.target.textContent) ){
-                sortType.push(e.target.textContent)
-            } else {
-                $(this).removeClass('active')
-                sortType = sortType.filter( item => item != e.target.textContent )
-            }
-            
-            console.log("sort", sortType)
-            console.log("sort", sortType.join(','))
-            url = `{{ content.absolute_url }}?country=${ country.join(',') }&product_and_service=${product.join(',')}&zone=${zone.join(',')}&sort_type=${sortType.join(',')}`;
-            console.log(url)
-            $('.list-items').load(url + " .item", function(response,status,xhr) {
-                if(status == "success") {
-                    $('.loading').hide();
-                    $('.list-items').fadeIn();
-                }
-                let parentEle = document.querySelector('.bot-wp.list-items')
-                if(!parentEle.hasChildNodes()){
-                    $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
-                } else {
-                    $('#not-found').remove();
-                }
-            });
-            $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {
-                console.log("s type")
-            }); 
-           
-          
-        })
-
-    })
-    
-    //============================== Pagination Click ==========================================
-    $(".pagination").on( "click", "a", function(event) {
-        event.preventDefault()
-        event.stopPropagation();
-        url = $(this).attr('href')
-        $('#not-found').remove();
-        url = "http:"+ url
-        console.log(url)
-        $('.loading').css('display','block');
-        $('.list-items').hide();
-        $('.list-items').load(url + " .item", function(response,status,xhr) {
-            if(status == "success") {
-                $('.loading').hide();
-                $('.list-items').fadeIn();
-                let parentEle = document.querySelector('.bot-wp.list-items')
-                if(!parentEle.hasChildNodes()){
-                    $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
-                } else {
-                    $('#not-found').remove();
-                }
-            }
-        });
-        $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {
-            console.log("zone ex")
-        }); 
-       
-        $(this).siblings().removeClass('active')
-        $(this).addClass('active')
-        
-    })
-
-    $(".exhibitors-wrap .mid-sec > form").submit(function(e){
-        event.preventDefault()
-        event.stopPropagation();
-        
-        $('#not-found').remove();
-        console.log("state")
-        $('.loading').css('display','block');
-        $('.list-items').hide();
-        $('.load-more-group').hide();
-        country = $('#select-state').map(function() {
-            return encodeURIComponent(this.value.trim()); 
-        }).get(); 
-
-        url = `{{ content.absolute_url }}?country=&product_and_service=&zone=&sort_type=`; 
-        console.log(url)
-        $('.list-items').load(url + " .item", function(response,status,xhr) {
-            if(status == "success") {
-                $('.loading').hide();
-                $('.list-items').fadeIn();
-            }
-            let parentEle = document.querySelector('.bot-wp.list-items')
-            if(!parentEle.hasChildNodes()){
-                $('.bot-wp.list-items').after('<div id="not-found" style="text-align:center">No Exhibitor found</div>')
-            } else {
-                $('#not-found').remove();
-            }
-        });
-        $('.pagination').load(url + " .pagination-wp", function(response,status,xhr) {}); 
-    });
-//     $('body').on('focus', '.quicksearch', function() {
-//         $('.filters input:checkbox:checked').click();
-//     });
-
-</script>
